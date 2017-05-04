@@ -42,12 +42,9 @@ describe('pool', function () {
       })
       pool.connect(function (err, client, release) {
         if (err) return done(err)
-        client.query('SELECT NOW()', function (err, res) {
-          release()
-          if (err) return done(err)
-          expect(called).to.be(true)
-          pool.end(done)
-        })
+        expect(called).to.be(true)
+        release()
+        pool.end(done)
       })
     })
 
