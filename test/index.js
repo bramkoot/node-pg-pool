@@ -32,6 +32,25 @@ describe('pool', function () {
       })
     })
 
+    it('calls the connectionSetup function when successfully connected', function (done) {
+      var called = false
+      var pool = new Pool({
+        connectionSetup: function (client, cb) {
+          called = true
+          cb(null, client)
+        }
+      })
+      pool.connect(function (err, client, release) {
+        if (err) return done(err)
+        client.query('SELECT NOW()', function (err, res) {
+          release()
+          if (err) return done(err)
+          expect(called).to.be(true)
+          pool.end(done)
+        })
+      })
+    })
+
     it('passes props to clients', function (done) {
       var pool = new Pool({ binary: true })
       pool.connect(function (err, client, release) {
@@ -67,6 +86,23 @@ describe('pool', function () {
       pool.query('SELECT $1::text as name', ['brianc'], function (err, res) {
         expect(res).to.be(undefined)
         expect(err).to.be.an(Error)
+        pool.end(function (err) {
+          done(err)
+        })
+      })
+    })
+
+    it('does not call setupConnection when an error occurs', function (done) {
+      var called = false
+      var pool = new Pool({
+        host: 'no-postgres-server-here.com',
+        connectionSetup: function () {
+          called = true
+        }
+      })
+      pool.query('SELECT $1::text as name', ['brianc'], function (err, res) {
+        expect(err).to.be.an(Error)
+        expect(called).to.be(false)
         pool.end(function (err) {
           done(err)
         })
